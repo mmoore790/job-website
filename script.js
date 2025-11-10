@@ -3,6 +3,10 @@ const navMenu = document.getElementById('nav-menu');
 const enquiryForm = document.getElementById('enquiry-form');
 const formFeedback = document.querySelector('.form-feedback');
 const yearEl = document.getElementById('current-year');
+const billingToggle = document.querySelector('.billing-toggle');
+const pricingCards = document.querySelectorAll('.pricing-card[data-plan]');
+const faqItems = document.querySelectorAll('.faq-item');
+const revealElements = document.querySelectorAll('.reveal');
 
 const setNavState = (expanded) => {
   navToggle.setAttribute('aria-expanded', expanded.toString());
@@ -75,6 +79,83 @@ if (enquiryForm && formFeedback) {
       formFeedback.textContent = '';
     }, 6000);
   });
+}
+
+const priceFormatter = new Intl.NumberFormat('en-GB', {
+  maximumFractionDigits: 0,
+});
+
+const updateBilling = (billing) => {
+  pricingCards.forEach((card) => {
+    const priceValue = card.dataset[`${billing}Price`];
+    const caption = card.dataset[`${billing}Caption`];
+    const priceEl = card.querySelector('.price-value');
+    const suffixEl = card.querySelector('.price span:last-child');
+    const captionEl = card.querySelector('.price-sub');
+
+    if (priceEl && priceValue) {
+      priceEl.textContent = priceFormatter.format(Number(priceValue));
+    }
+
+    if (suffixEl) {
+      suffixEl.textContent = billing === 'annual' ? '/mo*' : '/mo';
+    }
+
+    if (captionEl && caption) {
+      captionEl.textContent = caption;
+    }
+  });
+};
+
+if (billingToggle && pricingCards.length) {
+  const toggleOptions = billingToggle.querySelectorAll('.toggle-option');
+
+  toggleOptions.forEach((option) => {
+    option.addEventListener('click', () => {
+      if (option.classList.contains('active')) return;
+
+      toggleOptions.forEach((btn) => {
+        btn.classList.toggle('active', btn === option);
+      });
+
+      updateBilling(option.dataset.billing || 'monthly');
+    });
+  });
+
+  updateBilling('monthly');
+}
+
+if (faqItems.length) {
+  faqItems.forEach((item) => {
+    item.addEventListener('click', () => {
+      const isExpanded = item.getAttribute('aria-expanded') === 'true';
+      faqItems.forEach((faq) => {
+        faq.setAttribute('aria-expanded', faq === item && !isExpanded ? 'true' : 'false');
+      });
+    });
+  });
+}
+
+if (revealElements.length) {
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  if (prefersReducedMotion.matches || !('IntersectionObserver' in window)) {
+    revealElements.forEach((element) => element.classList.add('in-view'));
+  } else {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('in-view');
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.2 }
+    );
+
+    revealElements.forEach((element) => observer.observe(element));
+  }
 }
 
 if (yearEl) {
